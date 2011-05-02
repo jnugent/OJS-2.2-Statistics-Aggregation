@@ -1,0 +1,12 @@
+Follow the steps for installing a plugin as they are described at http://pkp.sfu.ca/ojs/
+
+It may be beneficial to create a tar.gz of this plugin and use the web tool for installing it.  
+Otherwise, you will need to insert the correct reference into the versions table.
+
+Alternatively, you may download a version of the plugin here:
+
+http://etcdev.hil.unb.ca/jason/statisticsAggregator-2.2.tar.gz
+
+This version is designed to work with OJS 2.2. If you want the version for OJS 2.3.x, please visit
+
+https://github.com/jnugent/OJS-Statistics-Aggregations
