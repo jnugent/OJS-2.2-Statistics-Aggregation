@@ -2,18 +2,6 @@
 
 class JSONEncoder {
 
-	/** @var $status string The status of an event (e.g. false if form validation fails) */
-	var $status;
-
-	/** @var $content string The message to be delivered back to the calling script */
-	var $content;
-
-	/** @var $isScript string Whether the content is javascript that should be executed */
-	var $isScript;
-
-	/** @var $elementId string ID for DOM element that will be replaced */
-	var $elementId;
-
 	/** @var $additionalAttributes array Set of additional attributes for special cases*/
 	var $additionalAttributes;
 
@@ -30,7 +18,7 @@ class JSONEncoder {
 	* @return string
 	*/
 	function getString() {
-		$jsonString = "{\"status\": $this->status, \"content\": $this->content, \"isScript\": $this->isScript, \"elementId\": $this->elementId";
+		$jsonString = "{";
 			if(isset($this->additionalAttributes)) {
 				foreach($this->additionalAttributes as $key => $value) {
 					$jsonString .= ", \"$key\": " . $this->_json_encode($value);
@@ -75,11 +63,11 @@ f', '\"'));
 			}
 			$result = array();
 			if ($isList) {
-				foreach ($a as $v) $result[] = $this->json_encode($v);
+				foreach ($a as $v) $result[] = $this->_json_encode($v);
 				return '[' . join(',', $result) . ']';
 			}
 			else {
-				foreach ($a as $k => $v) $result[] = $this->json_encode($k).':'.$this->json_encode($v);
+				foreach ($a as $k => $v) $result[] = $this->_json_encode($k).':'.$this->_json_encode($v);
 				return '{' . join(',', $result) . '}';
 			}
 		}
