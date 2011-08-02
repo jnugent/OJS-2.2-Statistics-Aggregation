@@ -27,7 +27,8 @@ class StatisticsAggregationPlugin extends GenericPlugin {
 	function register($category, $path) {
 		if (parent::register($category, $path)) {
 			$this->addLocaleData();
-			HookRegistry::register('TemplateManager::display', array(&$this, 'callbackInsertSA'));
+			HookRegistry::register('TemplateManager::display', array(&$this, 'callbackSendStatistics'));
+			HookRegistry::register('LoadHandler', array(&$this, 'callbackLoadHandler'));
 			return true;
 		} else {
 			return false;
@@ -90,7 +91,7 @@ class StatisticsAggregationPlugin extends GenericPlugin {
 	/**
 	 * build the statistics
 	 */
-	function callbackInsertSA($hookName, $params) {
+	function callbackSendStatistics($hookName, $params) {
 
 		if ($this->getEnabled()) {
 			$templateMgr =& $params[0];
@@ -110,11 +111,11 @@ class StatisticsAggregationPlugin extends GenericPlugin {
 						case 'article/interstitial.tpl':
 						case 'article/pdfInterstitial.tpl':
 						// Log the request as an article view.
-							$statsArray = $this->buildStatsArray($galley, $article);
+							$statsArray = $this->buildStatsArray($galley, $article, $journal->getJournalId());
 							$this->sendData($statsArray, $statisticsAggregationSiteId);
 						break;
 						default:
-							$statsArray = $this->buildStatsArray(null, null); // regular page view, no galley or article
+							$statsArray = $this->buildStatsArray(null, null, $journal->getJournalId()); // regular page view, no galley or article
 							if ($statsArray['rp'] != 'manager' && $template != 'rt/rt.tpl') { // do not accumulate stats for journal management pages or research toolbar.
 								$this->sendData($statsArray, $statisticsAggregationSiteId);
 							}
@@ -122,6 +123,27 @@ class StatisticsAggregationPlugin extends GenericPlugin {
 					}
 				}
 			}
+		}
+		return false;
+	}
+
+	/**
+	 * This handler intercepts requests for web services offered by the plugin. In this case, it just processes subscriptionIP lookups for now.
+	 * @param $hookName The name of the hook being called.
+	 * @param $params an array containing $page, $op, and $sourceFile.
+	 */
+	function callbackLoadHandler($hookName, $params) {
+
+		$page =& $params[0];
+		$op =& $params[1];
+		$sourceFile =& $params[2];
+
+		if ($page == 'sa' && $op == 'lookup') {
+
+			define('HANDLER_CLASS', 'SubscriptionLookupHandler');
+			$this->import('SubscriptionLookupHandler');
+			if ($this->getEnabled()) SubscriptionLookupHandler::lookup($params);
+			return true;
 		}
 		return false;
 	}
@@ -148,7 +170,7 @@ class StatisticsAggregationPlugin extends GenericPlugin {
 	 * @param Article $article the article object representing the current article being viewed, null if a regular non-article page.
 	 * @return Array $statsArray the array of our information.
 	 */
-	function buildStatsArray($galley, $article) {
+	function buildStatsArray($galley, $article, $journalId) {
 
 		$statsArray = array();
 
@@ -164,7 +186,33 @@ class StatisticsAggregationPlugin extends GenericPlugin {
 			$statsArray['mt'] = '';
 		}
 
-		$statsArray['ip'] =& Request::getRemoteAddr();
+
+		$remoteDomain =& Request::getRemoteDomain();
+		$remoteAddr =& Request::getRemoteAddr();
+		$user =& Request::getUser();
+
+		$subscriptionId = false;
+		$subscriptionName = '';
+
+		$subscriptionDao =& DAORegistry::getDAO('SubscriptionDAO');
+		$subscriptionId = $subscriptionDao->isValidSubscription($remoteDomain, $remoteAddr, (isset($user)) ? $user->getUserId() : null, $journalId);
+
+		if ($subscriptionId) {
+			$subscription =& $subscriptionDao->getSubscription($subscriptionId);
+			$userDao =& DAORegistry::getDAO('UserDAO');
+			$subScriptionUser =& $userDao->getUser($subscription->getUserId());
+			$subscriptionName = $subScriptionUser->getFullName();
+
+			if ($subscriptionName == null) {
+				// perhaps logged in User name?
+				if ($user != null) {
+					$subscriptionName = $user->getFullName();
+				}
+			}
+		}
+
+		$statsArray['sub'] = $subscriptionName;
+		$statsArray['ip'] =& $remoteAddr;
 		$statsArray['rp'] =& Request::getRequestedPage();
 		$statsArray['ua'] = $_SERVER["HTTP_USER_AGENT"];
 		$statsArray['ts'] = date('d/M/Y:H:i:s O', time());
@@ -279,7 +327,7 @@ class StatisticsAggregationPlugin extends GenericPlugin {
 			case 'viewstats':
 				$statisticsAggregationSiteId = $this->getSetting($journal->getJournalId(), 'statisticsAggregationSiteId');
 				if ($statisticsAggregationSiteId != '') {
-					Request::redirectUrl('http://warhammer.hil.unb.ca/stats/' . $statisticsAggregationSiteId);
+					Request::redirectUrl('http://warhammer.hil.unb.ca/stats/' . $statisticsAggregationSiteId . '/landing.php');
 				}
 				return true;
 			default:
