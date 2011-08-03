@@ -90,9 +90,9 @@ class SubscriptionLookupHandler extends Handler {
 
 									if ($subscriptionId) {
 										$subscription =& $subscriptionDao->getSubscription($subscriptionId);
-                        							$userDao =& DAORegistry::getDAO('UserDAO');
-                        							$subScriptionUser =& $userDao->getUser($subscription->getUserId());
-                        							$subscriptionName = $subScriptionUser->getFullName();
+										$userDao =& DAORegistry::getDAO('UserDAO');
+										$subScriptionUser =& $userDao->getUser($subscription->getUserId());
+										$subscriptionName = $subScriptionUser->getFullName();
 									}
 
 									// whether we found a subscription or not, set the 'sub' attribute on the <v> node so we can send it back.
