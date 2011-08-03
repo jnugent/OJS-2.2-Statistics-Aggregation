@@ -24,7 +24,7 @@ class SubscriptionLookupHandler extends Handler {
 		$journal =& Request::getJournal();
 		$journalId = $journal->getJournalId();
 
-		$sSubscriptionDao =& DAORegistry::getDAO('SubscriptionDAO');
+		$subscriptionDao =& DAORegistry::getDAO('SubscriptionDAO');
 		$journalStatisticsDao =& DAORegistry::getDAO('JournalStatisticsDAO');
 
 		$subscriptionStats = $journalStatisticsDao->getSubscriptionStatistics($journalId);
@@ -90,7 +90,9 @@ class SubscriptionLookupHandler extends Handler {
 
 									if ($subscriptionId) {
 										$subscription =& $subscriptionDao->getSubscription($subscriptionId);
-										$subscriptionName = $subscription->getMembership();
+                        							$userDao =& DAORegistry::getDAO('UserDAO');
+                        							$subScriptionUser =& $userDao->getUser($subscription->getUserId());
+                        							$subscriptionName = $subScriptionUser->getFullName();
 									}
 
 									// whether we found a subscription or not, set the 'sub' attribute on the <v> node so we can send it back.
