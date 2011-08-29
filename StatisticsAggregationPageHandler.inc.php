@@ -1,22 +1,31 @@
 <?php
 
 /**
- * @file SubscriptionLookupHandler.inc.php
+ * @file StatisticsAggregationPageHandler.inc.php
  *
  * Copyright (c) 2003-2010 John Willinsky
  * Distributed under the GNU GPL v2. For full terms see the file docs/COPYING.
  *
  * @package plugins.generic.statisticsAggregator
- * @class SubscriptionLookupHandler
- *
- * Look up subscription information based on a given IP address
+ * @class StatisticsAggregationPageHandler
  *
  */
 
-class SubscriptionLookupHandler extends Handler {
+class StatisticsAggregationPageHandler extends Handler {
 
 	function index($args) {
 		return true;
+	}
+
+	function viewstats($args) {
+
+		$journal =& Request::getJournal();
+		$journalId = $journal->getJournalId();
+		$statAggrPlugin =& PluginRegistry::getPlugin('generic', 'StatisticsAggregationPlugin');
+		$statisticsAggregationSiteId =& $statAggrPlugin->getSetting($journalId, 'statisticsAggregationSiteId');
+		if ($statisticsAggregationSiteId != '') {
+			Request::redirectUrl('http://warhammer.hil.unb.ca/stats/' . $statisticsAggregationSiteId . '/landing.php');
+		}
 	}
 
 	function lookup($args) {
